@@ -9,14 +9,14 @@ st.write("## Global Tuberculosis Burden, Our World in Data")
 
 # 3. Death vs Diagnosis
 
-def load_data():
+def part3_load_data():
 
-    df_detect = pd.read_csv("data/3- tuberculosis-case-detection-rate.csv")
-    df_deaths = pd.read_csv("data/2- tuberculosis-deaths-by-age.csv")
+    df_detect = pd.read_csv("data/detection_rate.csv")
+    df_deaths = pd.read_csv("data/death_by_age.csv")
 
     df_detect = df_detect.rename(columns={
         "Entity": "Country",
-        "Case detection rate (all forms)": "Detection Rate"
+        "Case detection rate (all forms)": "DetectionRate"
     })
 
     df_deaths = df_deaths.rename(columns={"Entity": "Country"})
@@ -34,7 +34,7 @@ def load_data():
 
     # Merge datasets by Country and Year
     df_merged = pd.merge(
-        df_detect[["Country", "Year", "Detection Rate"]],
+        df_detect[["Country", "Year", "DetectionRate"]],
         df_deaths[["Country", "Year", "Death"]],
         on=["Country", "Year"],
         how="inner"
@@ -48,7 +48,7 @@ def load_data():
     return df_final
 
 
-df = load_data()
+df = part3_load_data()
 
 
 st.write("## Deaths vs Diagnosed")
