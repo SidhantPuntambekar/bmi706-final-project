@@ -113,7 +113,6 @@ if sidebar == "Tuberculosis Diagnosis Gaps":
 
     df = part3_load_data()
 
-
     # Select country
     countries = sorted(df["Country"].unique())
     # Default to Afghanistan
@@ -169,10 +168,10 @@ if sidebar == "Tuberculosis Diagnosis Gaps":
             ]
         )
     )
+
     chart = (lines + points).properties(
         title=f"Number of Deaths vs Diagnosed Cases {selected_country}",
         height=500
     )
     
     st.altair_chart(chart, use_container_width=True)
-    st.altair_chart(part1_chart, use_container_width=True)
