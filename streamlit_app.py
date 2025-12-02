@@ -1,120 +1,177 @@
 import altair as alt
 import pandas as pd
 import streamlit as st
+from vega_datasets import data
 
 # @st.cache
 
-st.write("## Global Tuberculosis Burden, Our World in Data")
+st.title("Global Tuberculosis Burden, Our World in Data")
+sidebar = st.sidebar.selectbox("Select Dashboard", ["Global Incidence of Tuberculosis",
+                                                    "Age Distributions of Tuberculosis Related Deaths"
+                                                    "Tuberculosis Diagnosis Gaps", 
+                                                    "Geographic Patterns in Drug-Resistant TB Treatment Success",
+                                                    "Associations Between Tuberculosis Burden and Key Risk Factors (HIV Prevalence)"])
 
+if sidebar == "Global Incidence of Tuberculosis":
+    def part1_load_data():
+        df_incidence = pd.read_csv('data/1- incidence-of-tuberculosis-sdgs.csv')
 
-# 3. Death vs Diagnosis
+        df_incidence = df_incidence.rename(columns={
+            "Entity": "Country",
+            "Estimated incidence of all forms of tuberculosis": "Incidence"
+        })
 
-def part3_load_data():
+        df_incidence_country = df_incidence[df_incidence["Code"].notna() & (df_incidence["Code"] != "")]
 
-    df_detect = pd.read_csv("data/detection_rate.csv")
-    df_deaths = pd.read_csv("data/death_by_age.csv")
+        country_df = pd.read_csv('https://raw.githubusercontent.com/hms-dbmi/bmi706-2022/main/cancer_data/country_codes.csv', dtype = {'conuntry-code': str})
+        df_incidence_country_id = df_incidence_country.merge(country_df[["Country", "country-code"]], on = "Country", how = "left")
 
-    df_detect = df_detect.rename(columns={
-        "Entity": "Country",
-        "Case detection rate (all forms)": "DetectionRate"
-    })
+        return df_incidence_country_id
 
-    df_deaths = df_deaths.rename(columns={"Entity": "Country"})
+    part1_df = part1_load_data()
 
-    death_cols = [
-        "Deaths - Tuberculosis - Sex: Both - Age: 70+ years (Number)",
-        "Deaths - Tuberculosis - Sex: Both - Age: 50-69 years (Number)",
-        "Deaths - Tuberculosis - Sex: Both - Age: 15-49 years (Number)",
-        "Deaths - Tuberculosis - Sex: Both - Age: 5-14 years (Number)",
-        "Deaths - Tuberculosis - Sex: Both - Age: Under 5 (Number)"
-    ]
+    year = st.slider("Year", min_value = part1_df["Year"].min(), max_value = part1_df["Year"].max(), value = 2012)
+    subset = part1_df[part1_df["Year"] == year]
 
-    # Compute total deaths
-    df_deaths["Death"] = df_deaths[death_cols].sum(axis=1)
+    source = alt.topo_feature(data.world_110m.url, 'countries')
 
-    # Merge datasets by Country and Year
-    df_merged = pd.merge(
-        df_detect[["Country", "Year", "DetectionRate"]],
-        df_deaths[["Country", "Year", "Death"]],
-        on=["Country", "Year"],
-        how="inner"
+    width = 600
+    height  = 300
+    project = 'equirectangular'
+
+    background = alt.Chart(source
+    ).mark_geoshape(
+        fill = '#aaa',
+        stroke = 'white'
+    ).properties(
+        width = width,
+        height = height
+    ).project(project)
+
+    chart_base = alt.Chart(source).properties(
+            width = width, 
+            height = height
+        ).project(project
+        ).transform_lookup(
+            lookup= "id",
+            from_= alt.LookupData(
+                subset,
+                "country-code",
+                ["Country", "Code", "Incidence"]
+            )
+        )
+
+    rate_scale = alt.Scale(domain=[part1_df['Incidence'].min(), part1_df['Incidence'].max()], scheme = 'oranges')
+    rate_color = alt.Color(field = "Incidence", type = "quantitative", scale = rate_scale)
+
+    chart_incidence = chart_base.mark_geoshape().encode(
+        color = alt.Color("Incidence:Q", scale = rate_scale),
+        tooltip = ["Country:N", "Incidence:Q"],
+        ).properties(
+        title=f'Tuberculosis Incidence Rate By Country, {year}'
     )
 
-    # Compute "Diagnosed" = Death * CaseDetectionRate
-    df_merged["Diagnosed"] = df_merged["Death"] * df_merged["DetectionRate"]
+    part1_chart = alt.vconcat(background + chart_incidence).resolve_scale(color = 'independent')
 
-    df_final = df_merged[["Country", "Year", "Diagnosed", "Death"]]
+    st.altair_chart(part1_chart, use_container_width=True)
+    
 
-    return df_final
+if sidebar == "Tuberculosis Diagnosis Gaps":
+    def part3_load_data():
+        df_detect = pd.read_csv("data/detection_rate.csv")
+        df_deaths = pd.read_csv("data/death_by_age.csv")
 
+        df_detect = df_detect.rename(columns={
+            "Entity": "Country",
+            "Case detection rate (all forms)": "DetectionRate"
+        })
 
-df = part3_load_data()
+        df_deaths = df_deaths.rename(columns={"Entity": "Country"})
 
-
-st.write("## Deaths vs Diagnosed")
-
-# Select country
-countries = sorted(df["Country"].unique())
-
-# Default to Afghanistan
-default_index = countries.index("Afghanistan") if "Afghanistan" in countries else 0
-
-selected_country = st.selectbox(
-    "Select a Country",
-    countries,
-    index=default_index
-)
-
-df_country = df[df["Country"] == selected_country].copy()
-
-# Melt for plotting
-df_melt = df_country.melt(
-    id_vars=["Country", "Year"],
-    value_vars=["Death", "Diagnosed"],
-    var_name="Measure",
-    value_name="Value"
-)
-
-# Compute difference
-df_country["Difference"] = df_country["Diagnosed"] - df_country["Death"]
-
-# Points
-points = (
-    alt.Chart(df_melt)
-    .mark_circle(size=80)
-    .encode(
-        x=alt.X("Value:Q", title="Number of Cases"),
-        y=alt.Y("Year:O", sort="ascending"),
-        color=alt.Color("Measure:N", scale=alt.Scale(scheme="tableau10")),
-        tooltip=[
-            alt.Tooltip("Year:O"),
-            alt.Tooltip("Death:Q"),
-            alt.Tooltip("Diagnosed:Q"),
-            alt.Tooltip("Difference:Q")
+        death_cols = [
+            "Deaths - Tuberculosis - Sex: Both - Age: 70+ years (Number)",
+            "Deaths - Tuberculosis - Sex: Both - Age: 50-69 years (Number)",
+            "Deaths - Tuberculosis - Sex: Both - Age: 15-49 years (Number)",
+            "Deaths - Tuberculosis - Sex: Both - Age: 5-14 years (Number)",
+            "Deaths - Tuberculosis - Sex: Both - Age: Under 5 (Number)"
         ]
+        # Compute total deaths
+        df_deaths["Death"] = df_deaths[death_cols].sum(axis=1)
+
+        # Merge datasets by Country and Year
+        df_merged = pd.merge(
+            df_detect[["Country", "Year", "Detection Rate"]],
+            df_detect[["Country", "Year", "DetectionRate"]],
+            df_deaths[["Country", "Year", "Death"]],
+            on=["Country", "Year"],
+            how="inner"
+        )
+        # Compute "Diagnosed" = Death * CaseDetectionRate
+        df_merged["Diagnosed"] = df_merged["Death"] * df_merged["DetectionRate"]
+        df_final = df_merged[["Country", "Year", "Diagnosed", "Death"]]
+        return df_final
+
+    df = part3_load_data()
+
+
+    # Select country
+    countries = sorted(df["Country"].unique())
+    # Default to Afghanistan
+    default_index = countries.index("Afghanistan") if "Afghanistan" in countries else 0
+    selected_country = st.selectbox(
+        "Select a Country",
+        countries,
+        index=default_index
     )
-)
+    df_country = df[df["Country"] == selected_country].copy()
 
-# Lines connecting points per year
-lines = (
-    alt.Chart(df_country)
-    .mark_rule()
-    .encode(
-        y=alt.Y("Year:O", sort="ascending"),
-        x=alt.X("Death:Q"),
-        x2="Diagnosed:Q",
-        tooltip=[
-            alt.Tooltip("Year:O"),
-            alt.Tooltip("Death:Q"),
-            alt.Tooltip("Diagnosed:Q"),
-            alt.Tooltip("Difference:Q")
-        ]
+    # Melt for plotting
+    df_melt = df_country.melt(
+        id_vars=["Country", "Year"],
+        value_vars=["Death", "Diagnosed"],
+        var_name="Measure",
+        value_name="Value"
     )
-)
 
-chart = (lines + points).properties(
-    title=f"Number of Deaths vs Diagnosed Cases {selected_country}",
-    height=500
-)
+    # Compute difference
+    df_country["Difference"] = df_country["Diagnosed"] - df_country["Death"]
 
-st.altair_chart(chart, use_container_width=True)
+    # Points
+    points = (
+        alt.Chart(df_melt)
+        .mark_circle(size=80)
+        .encode(
+            x=alt.X("Value:Q", title="Number of Cases"),
+            y=alt.Y("Year:O", sort="ascending"),
+            color=alt.Color("Measure:N", scale=alt.Scale(scheme="tableau10")),
+            tooltip=[
+                alt.Tooltip("Year:O"),
+                alt.Tooltip("Death:Q"),
+                alt.Tooltip("Diagnosed:Q"),
+                alt.Tooltip("Difference:Q")
+            ]
+        )
+    )
+
+    # Lines connecting points per year
+    lines = (
+        alt.Chart(df_country)
+        .mark_rule()
+        .encode(
+            y=alt.Y("Year:O", sort="ascending"),
+            x=alt.X("Death:Q"),
+            x2="Diagnosed:Q",
+            tooltip=[
+                alt.Tooltip("Year:O"),
+                alt.Tooltip("Death:Q"),
+                alt.Tooltip("Diagnosed:Q"),
+                alt.Tooltip("Difference:Q")
+            ]
+        )
+    )
+    chart = (lines + points).properties(
+        title=f"Number of Deaths vs Diagnosed Cases {selected_country}",
+        height=500
+    )
+    
+    st.altair_chart(chart, use_container_width=True)
