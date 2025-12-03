@@ -134,18 +134,20 @@ elif sidebar == "Age Distributions of Tuberculosis Related Deaths":
     st.altair_chart(chart, use_container_width=True)
     
 
-if sidebar == "Tuberculosis Diagnosis Gaps":
+elif sidebar == "Tuberculosis Diagnosis Gaps":
     def part3_load_data():
+        # Load datasets
         df_detect = pd.read_csv("data/detection_rate.csv")
         df_deaths = pd.read_csv("data/death_by_age.csv")
 
+        # Rename columns
         df_detect = df_detect.rename(columns={
             "Entity": "Country",
             "Case detection rate (all forms)": "DetectionRate"
         })
-
         df_deaths = df_deaths.rename(columns={"Entity": "Country"})
 
+        # Death columns by age group
         death_cols = [
             "Deaths - Tuberculosis - Sex: Both - Age: 70+ years (Number)",
             "Deaths - Tuberculosis - Sex: Both - Age: 50-69 years (Number)",
@@ -153,26 +155,32 @@ if sidebar == "Tuberculosis Diagnosis Gaps":
             "Deaths - Tuberculosis - Sex: Both - Age: 5-14 years (Number)",
             "Deaths - Tuberculosis - Sex: Both - Age: Under 5 (Number)"
         ]
+
         # Compute total deaths
         df_deaths["Death"] = df_deaths[death_cols].sum(axis=1)
 
-        # Merge datasets by Country and Year
+        # Merge datasets
         df_merged = pd.merge(
             df_detect[["Country", "Year", "DetectionRate"]],
             df_deaths[["Country", "Year", "Death"]],
             on=["Country", "Year"],
             how="inner"
         )
-        # Compute "Diagnosed" = Death * CaseDetectionRate
+
+        # Compute diagnosed cases
         df_merged["Diagnosed"] = df_merged["Death"] * df_merged["DetectionRate"]
-        df_final = df_merged[["Country", "Year", "Diagnosed", "Death"]]
+
+        # Compute difference
+        df_merged["Difference"] = df_merged["Diagnosed"] - df_merged["Death"]
+
+        # Final dataframe
+        df_final = df_merged[["Country", "Year", "Death", "Diagnosed", "Difference"]]
         return df_final
 
     df = part3_load_data()
 
     # Select country
     countries = sorted(df["Country"].unique())
-    # Default to Afghanistan
     default_index = countries.index("Afghanistan") if "Afghanistan" in countries else 0
     selected_country = st.selectbox(
         "Select a Country",
@@ -189,10 +197,13 @@ if sidebar == "Tuberculosis Diagnosis Gaps":
         value_name="Value"
     )
 
-    # Compute difference
-    df_country["Difference"] = df_country["Diagnosed"] - df_country["Death"]
+    # Merge back for tooltip
+    df_melt = df_melt.merge(
+        df_country[["Year", "Death", "Diagnosed", "Difference"]],
+        on="Year",
+        how="left"
+    )
 
-    # Points
     points = (
         alt.Chart(df_melt)
         .mark_circle(size=80)
@@ -209,7 +220,6 @@ if sidebar == "Tuberculosis Diagnosis Gaps":
         )
     )
 
-    # Lines connecting points per year
     lines = (
         alt.Chart(df_country)
         .mark_rule()
@@ -230,5 +240,5 @@ if sidebar == "Tuberculosis Diagnosis Gaps":
         title=f"Number of Deaths vs Diagnosed Cases {selected_country}",
         height=500
     )
-    
+
     st.altair_chart(chart, use_container_width=True)
