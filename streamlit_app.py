@@ -158,7 +158,6 @@ if sidebar == "Tuberculosis Diagnosis Gaps":
 
         # Merge datasets by Country and Year
         df_merged = pd.merge(
-            df_detect[["Country", "Year", "Detection Rate"]],
             df_detect[["Country", "Year", "DetectionRate"]],
             df_deaths[["Country", "Year", "Death"]],
             on=["Country", "Year"],
