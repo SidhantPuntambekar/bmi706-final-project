@@ -7,7 +7,7 @@ from vega_datasets import data
 
 st.title("Global Tuberculosis Burden, Our World in Data")
 sidebar = st.sidebar.selectbox("Select Dashboard", ["Global Incidence of Tuberculosis",
-                                                    "Age Distributions of Tuberculosis Related Deaths"
+                                                    "Age Distributions of Tuberculosis Related Deaths",
                                                     "Tuberculosis Diagnosis Gaps", 
                                                     "Geographic Patterns in Drug-Resistant TB Treatment Success",
                                                     "Associations Between Tuberculosis Burden and Key Risk Factors (HIV Prevalence)"])
@@ -74,3 +74,61 @@ if sidebar == "Global Incidence of Tuberculosis":
     part1_chart = alt.vconcat(background + chart_incidence).resolve_scale(color = 'independent')
 
     st.altair_chart(part1_chart, use_container_width=True)
+
+elif sidebar == "Age Distributions of Tuberculosis Related Deaths":
+
+    part2_df = pd.read_csv("data/2- tuberculosis-deaths-by-age.csv")
+
+    death_cols = [
+        "Deaths - Tuberculosis - Sex: Both - Age: 70+ years (Number)",
+        "Deaths - Tuberculosis - Sex: Both - Age: 50-69 years (Number)",
+        "Deaths - Tuberculosis - Sex: Both - Age: 15-49 years (Number)",
+        "Deaths - Tuberculosis - Sex: Both - Age: 5-14 years (Number)",
+        "Deaths - Tuberculosis - Sex: Both - Age: Under 5 (Number)"
+    ]
+
+    # Sum deaths across all countries for each year
+    df_yearly = part2_df.groupby("Year")[death_cols].sum().reset_index()
+
+    df_melted = df_yearly.melt(
+        id_vars="Year",
+        value_vars=death_cols,
+        var_name="Age Group",
+        value_name="Deaths"
+    )
+
+    df_melted["Age Group"] = df_melted["Age Group"].str.extract(r"Age: (.*) \(")
+    # st.write(df_melted)
+
+    # Year range slider
+    min_year = int(df_melted["Year"].min())
+    max_year = int(df_melted["Year"].max())
+
+    year_range = st.slider(
+        "Year Range",
+        min_value=min_year,
+        max_value=max_year,
+        value=(min_year, max_year)
+    )
+
+    # Filter by chosen year range
+    subset = df_melted[
+        (df_melted["Year"] >= year_range[0]) &
+        (df_melted["Year"] <= year_range[1])
+    ]
+
+    age_order = ["Under 5", "5-14 years", "15-49 years", "50-69 years", "70+ years"]
+
+    chart = alt.Chart(subset).mark_bar().encode(
+        x=alt.X("Year:O"),
+        xOffset=alt.XOffset("Age Group:N", sort = age_order),
+        y=alt.Y("Deaths:Q", title="Tuberculosis Deaths"),
+        color=alt.Color("Age Group:N", title="Age Group", sort = age_order),
+        tooltip=["Year", "Age Group", "Deaths"]
+    ).properties(
+        width=600,
+        height=400,
+        title=f"Global Tuberculosis Deaths by Age Group ({year_range[0]}-{year_range[1]})"
+    )
+
+    st.altair_chart(chart, use_container_width=True)
