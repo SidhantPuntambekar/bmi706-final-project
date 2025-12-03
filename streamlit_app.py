@@ -5,7 +5,7 @@ from vega_datasets import data
 
 # @st.cache
 
-st.title("Global Tuberculosis Burden, Our World in Data")
+st.title("Global Tuberculosis Burden Dashboard, Our World in Data")
 sidebar = st.sidebar.selectbox("Select Dashboard", ["Global Incidence of Tuberculosis",
                                                     "Age Distributions of Tuberculosis Related Deaths",
                                                     "Tuberculosis Diagnosis Gaps", 
@@ -15,63 +15,120 @@ sidebar = st.sidebar.selectbox("Select Dashboard", ["Global Incidence of Tubercu
 if sidebar == "Global Incidence of Tuberculosis":
     def part1_load_data():
         df_incidence = pd.read_csv('data/1- incidence-of-tuberculosis-sdgs.csv')
+        df_case_detection_rate = pd.read_csv('data/detection_rate.csv')
 
         df_incidence = df_incidence.rename(columns={
             "Entity": "Country",
             "Estimated incidence of all forms of tuberculosis": "Incidence"
         })
 
+        df_case_detection_rate = df_case_detection_rate.rename(columns={
+            "Entity": "Country",
+            "Case detection rate (all forms)": "Case Detection Rate"
+        }) 
+
         df_incidence_country = df_incidence[df_incidence["Code"].notna() & (df_incidence["Code"] != "")]
+        df_case_detection_rate = df_case_detection_rate[df_case_detection_rate["Code"].notna() & (df_case_detection_rate["Code"] != "")]
 
-        country_df = pd.read_csv('https://raw.githubusercontent.com/hms-dbmi/bmi706-2022/main/cancer_data/country_codes.csv', dtype = {'conuntry-code': str})
-        df_incidence_country_id = df_incidence_country.merge(country_df[["Country", "country-code"]], on = "Country", how = "left")
+        country_df = pd.read_csv("https://raw.githubusercontent.com/hms-dbmi/bmi706-2022/main/cancer_data/country_codes.csv", 
+                                 dtype={"country-code": str})
 
-        return df_incidence_country_id
+        df_incidence_country_id = df_incidence_country.merge(
+            country_df[["Country", "country-code"]],
+            on="Country",
+            how="left"
+        )
 
-    part1_df = part1_load_data()
+        df_case_detection_rate_id = df_case_detection_rate.merge(
+            country_df[["Country", "country-code"]],
+            on="Country",
+            how="left"
+        )
 
-    year = st.slider("Year", min_value = part1_df["Year"].min(), max_value = part1_df["Year"].max(), value = 2012)
-    subset = part1_df[part1_df["Year"] == year]
+        return df_incidence_country_id, df_case_detection_rate_id
 
-    source = alt.topo_feature(data.world_110m.url, 'countries')
+    part1_df_incidence, part1_df_case_detection = part1_load_data()
+
+    year = st.slider("Year", min_value=int(part1_df_incidence["Year"].min()), max_value=int(part1_df_incidence["Year"].max()), value = 2012)
+    
+    subset = pd.merge(
+        part1_df_incidence,
+        part1_df_case_detection,
+        on=["Country", "Year", "country-code"],
+        how="inner"
+    )
+
+    subset = subset[subset["Year"] == year]
+
+    source = alt.topo_feature(data.world_110m.url, "countries")
 
     width = 600
-    height  = 300
-    project = 'equirectangular'
+    height = 300
+    project = "equirectangular"
 
-    background = alt.Chart(source
-    ).mark_geoshape(
-        fill = '#aaa',
-        stroke = 'white'
-    ).properties(
-        width = width,
-        height = height
-    ).project(project)
+    background = (
+        alt.Chart(source)
+        .mark_geoshape(fill="#aaa", stroke="white")
+        .properties(width=width, height=height)
+        .project(project)
+    )
 
-    chart_base = alt.Chart(source).properties(
-            width = width, 
-            height = height
-        ).project(project
-        ).transform_lookup(
-            lookup= "id",
-            from_= alt.LookupData(
+    selector = alt.selection_point(
+        fields=["id"], 
+        empty="all"
+    )
+
+    chart_base = (
+        alt.Chart(source)
+        .properties(width = width, height = height)
+        .project(project)
+        .transform_lookup(
+            lookup = "id",
+            from_ = alt.LookupData(
                 subset,
                 "country-code",
-                ["Country", "Code", "Incidence"]
+                ["Country", "Code", "Incidence", "Case Detection Rate"]
+            )
+        ).add_params(selector)
+    )
+
+    incidence_scale = alt.Scale(domain = [part1_df_incidence["Incidence"].min(), part1_df_incidence["Incidence"].max()], scheme = "yellowgreenblue")
+
+    chart_incidence = chart_base.mark_geoshape().encode(
+            color=alt.Color("Incidence:Q", scale=incidence_scale),
+            tooltip=["Country:N", "Incidence:Q"]
+        ).transform_filter(
+            selector
+        ).properties(
+            title = alt.TitleParams(
+                text = f"Estimated rate of new tuberculosis cases per 100,000 people, {year}",
+                fontSize = 16,
+                subtitle="Includes both new and latent reactivated infections",
+                subtitleColor="white",
+                subtitleFontSize=12,
+                subtitleFontWeight="normal"
+            )
+        )
+    
+    rate_scale = alt.Scale(domain = [part1_df_case_detection["Case Detection Rate"].min(), part1_df_case_detection["Case Detection Rate"].max()], scheme = "oranges")
+
+    chart_case_detection_rate = chart_base.mark_geoshape().encode(
+            color=alt.Color("Case Detection Rate:Q", scale=rate_scale),
+            tooltip=["Country:N", "Case Detection Rate:Q"]
+        ).transform_filter(
+            selector
+        ).properties(
+            title = alt.TitleParams(
+                text = f"Estimated tuberculosis case detection rate, {year}",
+                fontSize = 16,
+                subtitle = "Represents tuberculosis cases that were detected and treated in national tuberculosis control programs",
+                subtitleColor = "white",
+                subtitleFontSize = 12,
+                subtitleFontWeight = "normal"
             )
         )
 
-    rate_scale = alt.Scale(domain=[part1_df['Incidence'].min(), part1_df['Incidence'].max()], scheme = 'oranges')
-    rate_color = alt.Color(field = "Incidence", type = "quantitative", scale = rate_scale)
-
-    chart_incidence = chart_base.mark_geoshape().encode(
-        color = alt.Color("Incidence:Q", scale = rate_scale),
-        tooltip = ["Country:N", "Incidence:Q"],
-        ).properties(
-        title=f'Tuberculosis Incidence Rate By Country, {year}'
-    )
-
-    part1_chart = alt.vconcat(background + chart_incidence).resolve_scale(color = 'independent')
+    part1_chart = alt.vconcat(background + chart_incidence, background + chart_case_detection_rate).resolve_scale(color = "independent")
 
     st.altair_chart(part1_chart, use_container_width=True)
 
