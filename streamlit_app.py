@@ -300,3 +300,77 @@ elif sidebar == "Tuberculosis Diagnosis Gaps":
     )
 
     st.altair_chart(chart, use_container_width=True)
+
+elif sidebar == "Drug-Resistant TB Treatment Success Rate":
+    def part4_load_data():
+        df_xdr_mdr = pd.read_csv("data/4- tuberculosis-treatment-success-rate-by-type.csv")
+
+        df_xdr_mdr = df_xdr_mdr.rename(columns={
+            "Entity": "Country",
+            "Indicator:Treatment success rate: new TB cases": "New TB Cases Treatment Success Rate",
+            "Indicator:Treatment success rate for patients treated for MDR-TB (%)": "MDR-TB Cases Treatment Success Rate", 
+            "Indicator:Treatment success rate: XDR-TB cases": "XDR-TB Cases Treatment Success Rate", 
+        })
+
+        return df_xdr_mdr
+    
+    part4_df_xdr_mdr = part4_load_data()
+
+    default_countries = [
+        "South Africa",
+        "India",
+        "Spain",
+        "Hungary",
+        "France"
+    ]
+
+    countries = st.multiselect(
+        "Countries",
+        part4_df_xdr_mdr["Country"].unique(),
+        default = default_countries
+    )
+
+    country_filtered_df_xdr_mdr = part4_df_xdr_mdr[
+        part4_df_xdr_mdr["Country"].isin(countries)
+    ]
+
+    country_filtered_df_xdr_mdr_melt = country_filtered_df_xdr_mdr.melt(
+        id_vars=["Country", "Year"],
+        value_vars=[
+            "New TB Cases Treatment Success Rate",
+            "MDR-TB Cases Treatment Success Rate",
+            "XDR-TB Cases Treatment Success Rate"
+        ],
+        var_name = "Tuberculosis Type",
+        value_name = "Treatment Success Rate"
+    )
+
+    chart_list = []
+
+    for country in countries:
+        single_country_df = country_filtered_df_xdr_mdr_melt[
+            country_filtered_df_xdr_mdr_melt["Country"] == country
+        ]
+
+        chart = alt.Chart(single_country_df).mark_line(
+            point=True
+        ).encode(
+            x = alt.X("Year:O", title="Year"),
+            y = alt.Y(
+                "Treatment Success Rate:Q",
+                title="Treatment Success Rate (%)",
+                scale=alt.Scale(domain=[0, 100])
+            ),
+            color = alt.Color("Tuberculosis Type:N", title="Tuberculosis Case Type"),
+            tooltip = ["Country", "Year", "Tuberculosis Type", "Treatment Success Rate"]
+        ).properties(
+            width=700,
+            height=300,
+            title=country
+        )
+
+        chart_list.append(chart)
+
+    # Source: https://github.com/vega/altair/issues/1281
+    final_chart = alt.vconcat(*chart_list)
+    st.altair_chart(final_chart, use_container_width=True)
