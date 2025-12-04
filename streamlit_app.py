@@ -336,11 +336,7 @@ elif sidebar == "Drug-Resistant TB Treatment Success Rate":
 
     country_filtered_df_xdr_mdr_melt = country_filtered_df_xdr_mdr.melt(
         id_vars=["Country", "Year"],
-        value_vars=[
-            "New TB Cases Treatment Success Rate",
-            "MDR-TB Cases Treatment Success Rate",
-            "XDR-TB Cases Treatment Success Rate"
-        ],
+        value_vars = ["New TB Cases Treatment Success Rate", "MDR-TB Cases Treatment Success Rate", "XDR-TB Cases Treatment Success Rate"],
         var_name = "Tuberculosis Type",
         value_name = "Treatment Success Rate"
     )
@@ -348,25 +344,19 @@ elif sidebar == "Drug-Resistant TB Treatment Success Rate":
     chart_list = []
 
     for country in countries:
-        single_country_df = country_filtered_df_xdr_mdr_melt[
-            country_filtered_df_xdr_mdr_melt["Country"] == country
-        ]
+        single_country_df = country_filtered_df_xdr_mdr_melt[country_filtered_df_xdr_mdr_melt["Country"] == country]
 
         chart = alt.Chart(single_country_df).mark_line(
             point=True
         ).encode(
             x = alt.X("Year:O", title="Year"),
-            y = alt.Y(
-                "Treatment Success Rate:Q",
-                title="Treatment Success Rate (%)",
-                scale=alt.Scale(domain=[0, 100])
-            ),
-            color = alt.Color("Tuberculosis Type:N", title="Tuberculosis Case Type"),
+            y = alt.Y("Treatment Success Rate:Q", title = "Treatment Success Rate (%)", scale = alt.Scale(domain = [0, 100])),
+            color = alt.Color("Tuberculosis Type:N", title = "Tuberculosis Case Type"),
             tooltip = ["Country", "Year", "Tuberculosis Type", "Treatment Success Rate"]
         ).properties(
-            width=700,
-            height=300,
-            title=country
+            width = 700,
+            height = 300,
+            title = country
         )
 
         chart_list.append(chart)
