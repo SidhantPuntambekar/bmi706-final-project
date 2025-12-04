@@ -37,34 +37,29 @@ if sidebar == "Global Incidence of Tuberculosis":
     
         df_incidence_country_id = df_incidence_country.merge(
             country_df[["alpha-3", "country-code"]],
-            left_on="Code",
-            right_on="alpha-3",
-            how="left"
-        ).drop(columns=["alpha-3"])
+            left_on = "Code",
+            right_on = "alpha-3",
+            how = "left"
+        ).drop(columns = ["alpha-3"])
 
         df_case_detection_rate_id = df_case_detection_rate.merge(
             country_df[["alpha-3", "country-code"]],
-            left_on="Code",
-            right_on="alpha-3",
-            how="left"
-        ).drop(columns=["alpha-3"])
+            left_on = "Code",
+            right_on = "alpha-3",
+            how = "left"
+        ).drop(columns = ["alpha-3"])
 
         return df_incidence_country_id, df_case_detection_rate_id
 
     part1_df_incidence, part1_df_case_detection = part1_load_data()
 
-    year = st.slider(
-        "Year",
-        min_value=int(part1_df_incidence["Year"].min()),
-        max_value=int(part1_df_incidence["Year"].max()),
-        value=2012
-    )
+    year = st.slider("Year", min_value = int(part1_df_incidence["Year"].min()), max_value = int(part1_df_incidence["Year"].max()), value = 2012)
 
     subset = pd.merge(
         part1_df_incidence,
         part1_df_case_detection,
-        on=["Country", "Year", "Code", "country-code"],
-        how="inner"
+        on = ["Country", "Year", "Code", "country-code"],
+        how = "inner"
     )
 
     subset = subset[subset["Year"] == year]
@@ -77,8 +72,8 @@ if sidebar == "Global Incidence of Tuberculosis":
 
     background = (
         alt.Chart(source)
-        .mark_geoshape(fill="#aaa", stroke="white")
-        .properties(width=width, height=height)
+        .mark_geoshape(fill = "#aaa", stroke = "white")
+        .properties(width = width, height = height)
         .project(project)
     )
 
@@ -86,11 +81,11 @@ if sidebar == "Global Incidence of Tuberculosis":
     
     chart_base = (
         alt.Chart(source)
-        .properties(width=width, height=height)
+        .properties(width = width, height = height)
         .project(project)
         .transform_lookup(
-            lookup="id",
-            from_=alt.LookupData(
+            lookup = "id",
+            from_ = alt.LookupData(
                 subset,
                 "country-code",
                 ["Country", "Code", "Incidence", "Case Detection Rate"]
@@ -99,44 +94,35 @@ if sidebar == "Global Incidence of Tuberculosis":
         .add_params(selector)
     )
 
-    incidence_scale = alt.Scale(
-        domain=[part1_df_incidence["Incidence"].min(), part1_df_incidence["Incidence"].max()],
-        scheme="yellowgreenblue"
-    )
+    incidence_scale = alt.Scale(domain = [part1_df_incidence["Incidence"].min(), part1_df_incidence["Incidence"].max()], scheme = "yellowgreenblue")
 
     chart_incidence = chart_base.mark_geoshape().encode(
-        color=alt.Color("Incidence:Q", scale=incidence_scale),
-        tooltip=["Country:N", "Incidence:Q"]
+        color = alt.Color("Incidence:Q", scale=incidence_scale),
+        tooltip = ["Country:N", "Incidence:Q"]
     ).transform_filter(selector).properties(
         title=alt.TitleParams(
-            text=f"Estimated rate of new tuberculosis cases per 100,000 people, {year}",
-            fontSize=16,
-            subtitle="Includes both new and latent reactivated infections",
-            subtitleColor="white",
-            subtitleFontSize=12,
-            subtitleFontWeight="normal"
+            text = f"Estimated rate of new tuberculosis cases per 100,000 people, {year}",
+            fontSize = 16,
+            subtitle = "Includes both new and latent reactivated infections",
+            subtitleColor = "white",
+            subtitleFontSize = 12,
+            subtitleFontWeight = "normal"
         )
     )
 
-    rate_scale = alt.Scale(
-        domain=[
-            part1_df_case_detection["Case Detection Rate"].min(),
-            part1_df_case_detection["Case Detection Rate"].max()
-        ],
-        scheme="oranges"
-    )
+    rate_scale = alt.Scale(domain = [part1_df_case_detection["Case Detection Rate"].min(), part1_df_case_detection["Case Detection Rate"].max()], scheme = "oranges")
 
     chart_case_detection_rate = chart_base.mark_geoshape().encode(
-        color=alt.Color("Case Detection Rate:Q", scale=rate_scale),
-        tooltip=["Country:N", "Case Detection Rate:Q"]
+        color = alt.Color("Case Detection Rate:Q", scale=rate_scale),
+        tooltip = ["Country:N", "Case Detection Rate:Q"]
     ).transform_filter(selector).properties(
-        title=alt.TitleParams(
-            text=f"Estimated tuberculosis case detection rate, {year}",
-            fontSize=16,
-            subtitle="Represents tuberculosis cases that were detected and treated in national tuberculosis control programs",
-            subtitleColor="white",
-            subtitleFontSize=12,
-            subtitleFontWeight="normal"
+        title = alt.TitleParams(
+            text = f"Estimated tuberculosis case detection rate, {year}",
+            fontSize = 16,
+            subtitle = "Represents tuberculosis cases that were detected and treated in national tuberculosis control programs",
+            subtitleColor = "white",
+            subtitleFontSize = 12,
+            subtitleFontWeight = "normal"
         )
     )
 
