@@ -316,13 +316,7 @@ elif sidebar == "Drug-Resistant TB Treatment Success Rate":
     
     part4_df_xdr_mdr = part4_load_data()
 
-    default_countries = [
-        "South Africa",
-        "India",
-        "Spain",
-        "Hungary",
-        "France"
-    ]
+    default_countries = ["South Africa", "India", "Spain", "Hungary", "France"] # These countries have high levels of 
 
     countries = st.multiselect(
         "Countries",
