@@ -33,7 +33,7 @@ This visualization tool is meant for:
 * Public health officials
 * Clinicians
 
-The goal is to help people better understand how widespread TB is, how HIV plays a role, and what challenges still exist—like antibiotic resistance and gaps in diagnosis—so resources and care can be better targeted.
+The goal is to help people better understand how widespread TB is, how it is being treated globally around the world, and what challenges still exist (like antibiotic resistance and gaps in diagnosis) so resources and care can be better targeted.
 
 # References
 
