@@ -1,6 +1,7 @@
 # BMI 706: Tuberculosis Dashboard Final Project 
 
 Authors: Claire Qu, Sidhant Puntambekar, Beatrice Chen, Christine Song
+
 Team Name: The Last Altairbenders
 
 # Dataset Overview
