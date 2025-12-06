@@ -424,36 +424,40 @@ elif sidebar == "Associations Between Tuberculosis and HIV Prevalence":
         default=all_continents
     )
 
-    # Filter by selected continents
-    df = df[df["region"].isin(selected_continents)]
+    # Only display chart if continents are selected
+    if not selected_continents:
+        st.write("Please select at least one continent.")
+    else:
+        # Filter by selected continents
+        df = df[df["region"].isin(selected_continents)]
 
-    # Year slider
-    min_year = int(df["Year"].min())
-    max_year = int(df["Year"].max())
-    year = st.slider("Year", min_value=min_year, max_value=max_year, value=max_year)
-    
-    subset = df[df["Year"] == year]
+        # Year slider
+        min_year = int(df["Year"].min())
+        max_year = int(df["Year"].max())
+        year = st.slider("Year", min_value=min_year, max_value=max_year, value=max_year)
+        
+        subset = df[df["Year"] == year]
 
-    # Scatter plot
-    chart = alt.Chart(subset).mark_circle(size=60).encode(
-        x=alt.X("ART Coverage:Q", title="Antiretroviral Therapy (ART) Coverage in HIV-Positive TB Patients (%)", scale=alt.Scale(domain=[0, 100])),
-        y=alt.Y("Log Deaths:Q", title="TB-Related Deaths in HIV+ Individuals (log₁₀ scale)"), 
-        color=alt.Color("region:N", title="Continent"),
-        tooltip=[
-            alt.Tooltip("Entity", title="Country"),
-            alt.Tooltip("ART Coverage:Q", title="ART Coverage (%)", format=".1f"),
-            alt.Tooltip("Deaths:Q", title="TB Deaths (HIV+)"),
-            alt.Tooltip("Cases:Q", title="HIV+ TB Cases"),
-            alt.Tooltip("Year:O")
-        ]
-    ).properties(
-        title=alt.TitleParams(
-            text=f"Does Antiretroviral Therapy Reduce TB Deaths Among HIV-Positive Patients? ({year})",
-            subtitle="Each point represents a country; lower-right quadrant indicates successful ART intervention",
-            subtitleColor="gray",
-            subtitleFontSize=12
-        ),
-        height=500
-    )
+        # Scatter plot
+        chart = alt.Chart(subset).mark_circle(size=60).encode(
+            x=alt.X("ART Coverage:Q", title="Antiretroviral Therapy (ART) Coverage in HIV-Positive TB Patients (%)", scale=alt.Scale(domain=[0, 100])),
+            y=alt.Y("Log Deaths:Q", title="TB-Related Deaths in HIV+ Individuals (log₁₀ scale)"), 
+            color=alt.Color("region:N", title="Continent"),
+            tooltip=[
+                alt.Tooltip("Entity", title="Country"),
+                alt.Tooltip("ART Coverage:Q", title="ART Coverage (%)", format=".1f"),
+                alt.Tooltip("Deaths:Q", title="TB Deaths (HIV+)"),
+                alt.Tooltip("Cases:Q", title="HIV+ TB Cases"),
+                alt.Tooltip("Year:O")
+            ]
+        ).properties(
+            title=alt.TitleParams(
+                text=f"Does Antiretroviral Therapy Reduce TB Deaths Among HIV-Positive Patients? ({year})",
+                subtitle="Each point represents a country; lower-right quadrant indicates successful ART intervention",
+                subtitleColor="gray",
+                subtitleFontSize=12
+            ),
+            height=500
+        )
 
-    st.altair_chart(chart, use_container_width=True)
+        st.altair_chart(chart, use_container_width=True)
