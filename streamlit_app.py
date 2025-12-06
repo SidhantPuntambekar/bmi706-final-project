@@ -105,7 +105,6 @@ if sidebar == "Global Incidence of Tuberculosis":
             text = f"Estimated rate of new tuberculosis cases per 100,000 people, {year}",
             fontSize = 16,
             subtitle = "Includes both new and latent reactivated infections",
-            subtitleColor = "white",
             subtitleFontSize = 12,
             subtitleFontWeight = "normal"
         )
@@ -120,8 +119,7 @@ if sidebar == "Global Incidence of Tuberculosis":
         title = alt.TitleParams(
             text = f"Estimated tuberculosis case detection rate (%), {year}",
             fontSize = 16,
-            subtitle = "Represents tuberculosis cases that were detected and treated in national tuberculosis control programs",
-            subtitleColor = "white",
+            subtitle = "Represents tuberculosis cases that were detected and treated in national tuberculosis control programs", 
             subtitleFontSize = 12,
             subtitleFontWeight = "normal"
         )
@@ -353,11 +351,7 @@ elif sidebar == "Drug-Resistant TB Treatment Success Rate":
             height = 400,
             title = alt.TitleParams(
                 text = f"{country} Tuberculosis Case Treatment Success Rate",
-                fontSize = 16,
-                subtitle = "",
-                subtitleColor = "white",
-                subtitleFontSize = 12,
-                subtitleFontWeight = "normal"
+                fontSize = 16
             )
         )
 
