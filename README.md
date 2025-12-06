@@ -27,13 +27,15 @@ five categorized from the Institute of Health Metrics and Evaluation.
 * Geospatial data: 228 unique countries globally
 
 # Target Audience
-This visualization tool is meant for:
+Our main goal for the tuberculosis visualization tool is to describe the prevalence of TB cases globally, identify key risk factors such as HIV comorbidities, as well as emphasize current challenges to TB medical care (such as antibiotic resistance and diagnosis gaps). The visualization tool will be designed for the general public to easily explore global trends, understand the drivers of tuberculosis burden, and recognize the persistent gaps in treatment. 
 
-* The general public
-* Public health officials
-* Clinicians
+# Visualization Tasks 
 
-The goal is to help people better understand how widespread TB is, how it is being treated globally around the world, and what challenges still exist (like antibiotic resistance and gaps in diagnosis) so resources and care can be better targeted.
+1. Describe trends in global and regional tuberculosis incidence and mortality over time. 
+2. Categorize age distributions of tuberculosis related deaths to highlight the differences in adult vs. child mortality. 
+3. Comparison of estimated tuberculosis deaths vs. number of diagnosed cases to visualize diagnosis gaps. 
+4. Geographical distribution and prevalence of treatment success rate for antibiotic-resistant tuberculosis (MDR, XDR) cases. 
+5. Relationships between tuberculosis burden and major risk factors (from orthogonal datasets) such as HIV prevalence. 
 
 # References
 

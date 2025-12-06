@@ -1,5 +1,6 @@
 import altair as alt
 import pandas as pd
+import numpy as np
 import streamlit as st
 from vega_datasets import data
 
@@ -10,7 +11,7 @@ sidebar = st.sidebar.selectbox("Select Dashboard", ["Global Incidence of Tubercu
                                                     "Age Distributions of Tuberculosis Related Deaths",
                                                     "Tuberculosis Diagnosis Gaps", 
                                                     "Drug-Resistant TB Treatment Success Rate",
-                                                    "Associations Between Tuberculosis Burden and Key Risk Factors (HIV Prevalence)"])
+                                                    "Associations Between Tuberculosis and HIV Prevalence"])
 
 if sidebar == "Global Incidence of Tuberculosis":
     def part1_load_data():
@@ -66,8 +67,8 @@ if sidebar == "Global Incidence of Tuberculosis":
 
     source = alt.topo_feature(data.world_110m.url, "countries")
 
-    width = 600
-    height = 300
+    width = 700
+    height = 400
     project = "equirectangular"
 
     background = (
@@ -104,7 +105,6 @@ if sidebar == "Global Incidence of Tuberculosis":
             text = f"Estimated rate of new tuberculosis cases per 100,000 people, {year}",
             fontSize = 16,
             subtitle = "Includes both new and latent reactivated infections",
-            subtitleColor = "white",
             subtitleFontSize = 12,
             subtitleFontWeight = "normal"
         )
@@ -117,10 +117,9 @@ if sidebar == "Global Incidence of Tuberculosis":
         tooltip = ["Country:N", "Case Detection Rate:Q"]
     ).transform_filter(selector).properties(
         title = alt.TitleParams(
-            text = f"Estimated tuberculosis case detection rate, {year}",
+            text = f"Estimated tuberculosis case detection rate (%), {year}",
             fontSize = 16,
-            subtitle = "Represents tuberculosis cases that were detected and treated in national tuberculosis control programs",
-            subtitleColor = "white",
+            subtitle = "Represents tuberculosis cases that were detected and treated in national tuberculosis control programs", 
             subtitleFontSize = 12,
             subtitleFontWeight = "normal"
         )
@@ -184,8 +183,8 @@ elif sidebar == "Age Distributions of Tuberculosis Related Deaths":
         color=alt.Color("Age Group:N", title="Age Group", sort = age_order),
         tooltip=["Year", "Age Group", "Deaths"]
     ).properties(
-        width=600,
-        height=400,
+        width = 700,
+        height = 400,
         title=f"Global Tuberculosis Deaths by Age Group ({year_range[0]}-{year_range[1]})"
     )
 
@@ -307,16 +306,16 @@ elif sidebar == "Drug-Resistant TB Treatment Success Rate":
 
         df_xdr_mdr = df_xdr_mdr.rename(columns={
             "Entity": "Country",
-            "Indicator:Treatment success rate: new TB cases": "New TB Cases Treatment Success Rate",
-            "Indicator:Treatment success rate for patients treated for MDR-TB (%)": "MDR-TB Cases Treatment Success Rate", 
-            "Indicator:Treatment success rate: XDR-TB cases": "XDR-TB Cases Treatment Success Rate", 
+            "Indicator:Treatment success rate: new TB cases": "New TB Cases",
+            "Indicator:Treatment success rate for patients treated for MDR-TB (%)": "MDR-TB Cases", 
+            "Indicator:Treatment success rate: XDR-TB cases": "XDR-TB Cases", 
         })
 
         return df_xdr_mdr
     
     part4_df_xdr_mdr = part4_load_data()
 
-    default_countries = ["South Africa", "India", "Spain", "Hungary", "France"] # These countries have high levels of 
+    default_countries = ["Democratic Republic of Congo", "South Africa", "India", "Guinea-Bissau", "Botswana"] # These countries have high levels of 
 
     countries = st.multiselect(
         "Countries",
@@ -330,7 +329,7 @@ elif sidebar == "Drug-Resistant TB Treatment Success Rate":
 
     country_filtered_df_xdr_mdr_melt = country_filtered_df_xdr_mdr.melt(
         id_vars=["Country", "Year"],
-        value_vars = ["New TB Cases Treatment Success Rate", "MDR-TB Cases Treatment Success Rate", "XDR-TB Cases Treatment Success Rate"],
+        value_vars = ["New TB Cases", "MDR-TB Cases", "XDR-TB Cases"],
         var_name = "Tuberculosis Type",
         value_name = "Treatment Success Rate"
     )
@@ -341,7 +340,7 @@ elif sidebar == "Drug-Resistant TB Treatment Success Rate":
         single_country_df = country_filtered_df_xdr_mdr_melt[country_filtered_df_xdr_mdr_melt["Country"] == country]
 
         chart = alt.Chart(single_country_df).mark_line(
-            point=True
+            point = True
         ).encode(
             x = alt.X("Year:O", title="Year"),
             y = alt.Y("Treatment Success Rate:Q", title = "Treatment Success Rate (%)", scale = alt.Scale(domain = [0, 100])),
@@ -349,8 +348,11 @@ elif sidebar == "Drug-Resistant TB Treatment Success Rate":
             tooltip = ["Country", "Year", "Tuberculosis Type", "Treatment Success Rate"]
         ).properties(
             width = 700,
-            height = 300,
-            title = country
+            height = 400,
+            title = alt.TitleParams(
+                text = f"{country} Tuberculosis Case Treatment Success Rate",
+                fontSize = 16
+            )
         )
 
         chart_list.append(chart)
@@ -358,3 +360,97 @@ elif sidebar == "Drug-Resistant TB Treatment Success Rate":
     # Source: https://github.com/vega/altair/issues/1281
     final_chart = alt.vconcat(*chart_list)
     st.altair_chart(final_chart, use_container_width=True)
+
+elif sidebar == "Associations Between Tuberculosis and HIV Prevalence":
+    def part5_load_data():
+        df_deaths = pd.read_csv("data/5- tb-related-deaths-hiv.csv")
+        df_art = pd.read_csv("data/7- tb-patients-living-with-hiv-receiving-art.csv")
+        df_cases = pd.read_csv("data/8- tb-patients-tested-positive-for-hiv.csv")
+
+        df_deaths = df_deaths.rename(columns={
+            "Tuberculosis-related deaths among people living with HIV - Central estimate": "Deaths"
+        })
+        df_art = df_art.rename(columns={
+            "TB patients living with HIV receiving ART": "ART"
+        })
+        df_cases = df_cases.rename(columns={
+            "TB patients tested positive for HIV": "Cases"
+        })
+        df_merged = pd.merge(df_cases, df_art, on=["Entity", "Code", "Year"], how="inner")
+        df_merged = pd.merge(df_merged, df_deaths, on=["Entity", "Code", "Year"], how="inner")
+
+        # Load country codes
+        country_df = pd.read_csv(
+            "https://raw.githubusercontent.com/hms-dbmi/bmi706-2022/main/cancer_data/country_codes.csv",
+            dtype={"country-code": str}
+        )
+        
+        # Merge with country codes to get region (Continent)
+        df_final = df_merged.merge(
+            country_df[["alpha-3", "region"]],
+            left_on="Code",
+            right_on="alpha-3",
+            how="left"
+        ).drop(columns=["alpha-3"])
+        
+        return df_final
+
+    df = part5_load_data()
+
+    df = df[df["Cases"] > 0]
+    df["ART Coverage"] = (df["ART"] / df["Cases"]) * 100
+    # Cap ART coverage at 100% (values over 100% indicate data inconsistencies)
+    df["ART Coverage"] = df["ART Coverage"].clip(upper=100)
+    # Calculate Log Deaths (adding 1 to avoid log(0))                                                                         │
+    df["Log Deaths"] = np.log10(df["Deaths"] + 1)       
+
+    # Filter out potential infinite or NaN values and ensure region is present
+    df = df.dropna(subset=["ART Coverage", "region"])
+    # Filter to start from 2003 (earlier years have insufficient data)
+    df = df[df["Year"] >= 2003]
+
+    # Continent multiselect
+    all_continents = sorted(df["region"].dropna().unique().tolist())
+    selected_continents = st.multiselect(
+        "Continents",
+        all_continents,
+        default=all_continents
+    )
+
+    # Only display chart if continents are selected
+    if not selected_continents:
+        st.write("Please select at least one continent.")
+    else:
+        # Filter by selected continents
+        df = df[df["region"].isin(selected_continents)]
+
+        # Year slider
+        min_year = int(df["Year"].min())
+        max_year = int(df["Year"].max())
+        year = st.slider("Year", min_value=min_year, max_value=max_year, value=max_year)
+        
+        subset = df[df["Year"] == year]
+
+        # Scatter plot
+        chart = alt.Chart(subset).mark_circle(size=60).encode(
+            x=alt.X("ART Coverage:Q", title="Antiretroviral Therapy (ART) Coverage in HIV-Positive TB Patients (%)", scale=alt.Scale(domain=[0, 100])),
+            y=alt.Y("Log Deaths:Q", title="TB-Related Deaths in HIV+ Individuals (log₁₀ scale)"), 
+            color=alt.Color("region:N", title="Continent"),
+            tooltip=[
+                alt.Tooltip("Entity", title="Country"),
+                alt.Tooltip("ART Coverage:Q", title="ART Coverage (%)", format=".1f"),
+                alt.Tooltip("Deaths:Q", title="TB Deaths (HIV+)"),
+                alt.Tooltip("Cases:Q", title="HIV+ TB Cases"),
+                alt.Tooltip("Year:O")
+            ]
+        ).properties(
+            title=alt.TitleParams(
+                text=f"Does Antiretroviral Therapy Reduce TB Deaths Among HIV-Positive Patients? ({year})",
+                subtitle="Each point represents a country; lower-right quadrant indicates successful ART intervention",
+                subtitleColor="black",
+                subtitleFontSize=12
+            ),
+            height=500
+        )
+
+        st.altair_chart(chart, use_container_width=True)
