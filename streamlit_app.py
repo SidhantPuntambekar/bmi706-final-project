@@ -347,7 +347,7 @@ elif sidebar == "Drug-Resistant TB Treatment Success Rate":
             x = alt.X("Year:O", title="Year"),
             y = alt.Y("Treatment Success Rate:Q", title = "Treatment Success Rate (%)", scale = alt.Scale(domain = [0, 100])),
             color = alt.Color("Tuberculosis Type:N", title = "Tuberculosis Case Type"),
-            tooltip = ["Country", "Year", "Tuberculosis Type", "Treatment Success Rate (%)"]
+            tooltip = ["Country", "Year", "Tuberculosis Type", "Treatment Success Rate"]
         ).properties(
             width = 700,
             height = 400,
