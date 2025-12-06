@@ -416,6 +416,17 @@ elif sidebar == "Associations Between Tuberculosis Burden and Key Risk Factors (
     # Filter to start from 2003 (earlier years have insufficient data)
     df = df[df["Year"] >= 2003]
 
+    # Continent multiselect
+    all_continents = sorted(df["region"].dropna().unique().tolist())
+    selected_continents = st.multiselect(
+        "Continents",
+        all_continents,
+        default=all_continents
+    )
+
+    # Filter by selected continents
+    df = df[df["region"].isin(selected_continents)]
+
     # Year slider
     min_year = int(df["Year"].min())
     max_year = int(df["Year"].max())
