@@ -1,5 +1,6 @@
 import altair as alt
 import pandas as pd
+import numpy as np
 import streamlit as st
 from vega_datasets import data
 
@@ -358,3 +359,83 @@ elif sidebar == "Drug-Resistant TB Treatment Success Rate":
     # Source: https://github.com/vega/altair/issues/1281
     final_chart = alt.vconcat(*chart_list)
     st.altair_chart(final_chart, use_container_width=True)
+
+elif sidebar == "Associations Between Tuberculosis Burden and Key Risk Factors (HIV Prevalence)":
+    def part5_load_data():
+        df_deaths = pd.read_csv("data/5- tb-related-deaths-hiv.csv")
+        df_art = pd.read_csv("data/7- tb-patients-living-with-hiv-receiving-art.csv")
+        df_cases = pd.read_csv("data/8- tb-patients-tested-positive-for-hiv.csv")
+
+        df_deaths = df_deaths.rename(columns={
+            "Tuberculosis-related deaths among people living with HIV - Central estimate": "Deaths"
+        })
+        df_art = df_art.rename(columns={
+            "TB patients living with HIV receiving ART": "ART"
+        })
+        df_cases = df_cases.rename(columns={
+            "TB patients tested positive for HIV": "Cases"
+        })
+        df_merged = pd.merge(df_cases, df_art, on=["Entity", "Code", "Year"], how="inner")
+        df_merged = pd.merge(df_merged, df_deaths, on=["Entity", "Code", "Year"], how="inner")
+
+        # Load country codes
+        country_df = pd.read_csv(
+            "https://raw.githubusercontent.com/hms-dbmi/bmi706-2022/main/cancer_data/country_codes.csv",
+            dtype={"country-code": str}
+        )
+        
+        # Merge with country codes to get region (Continent)
+        df_final = df_merged.merge(
+            country_df[["alpha-3", "region"]],
+            left_on="Code",
+            right_on="alpha-3",
+            how="left"
+        ).drop(columns=["alpha-3"])
+        
+        return df_final
+
+    df = part5_load_data()
+
+    df = df[df["Cases"] > 0]
+    df["ART Coverage"] = (df["ART"] / df["Cases"]) * 100
+    # Cap ART coverage at 100% (values over 100% indicate data inconsistencies)
+    df["ART Coverage"] = df["ART Coverage"].clip(upper=100)
+    # Calculate Log Deaths (adding 1 to avoid log(0))                                                                         │
+    df["Log Deaths"] = np.log10(df["Deaths"] + 1)       
+
+    # Filter out potential infinite or NaN values and ensure region is present
+    df = df.dropna(subset=["ART Coverage", "region"])
+
+    # Filter to start from 2003 (earlier years have insufficient data)
+    df = df[df["Year"] >= 2003]
+
+    # Year slider
+    min_year = int(df["Year"].min())
+    max_year = int(df["Year"].max())
+    year = st.slider("Year", min_value=min_year, max_value=max_year, value=max_year)
+    
+    subset = df[df["Year"] == year]
+
+    # Scatter plot
+    chart = alt.Chart(subset).mark_circle(size=60).encode(
+        x=alt.X("ART Coverage:Q", title="Antiretroviral Therapy (ART) Coverage in HIV-Positive TB Patients (%)", scale=alt.Scale(domain=[0, 100])),
+        y=alt.Y("Log Deaths:Q", title="TB-Related Deaths in HIV+ Individuals (log₁₀ scale)"), 
+        color=alt.Color("region:N", title="Continent"),
+        tooltip=[
+            alt.Tooltip("Entity", title="Country"),
+            alt.Tooltip("ART Coverage:Q", title="ART Coverage (%)", format=".1f"),
+            alt.Tooltip("Deaths:Q", title="TB Deaths (HIV+)"),
+            alt.Tooltip("Cases:Q", title="HIV+ TB Cases"),
+            alt.Tooltip("Year:O")
+        ]
+    ).properties(
+        title=alt.TitleParams(
+            text=f"Does Antiretroviral Therapy Reduce TB Deaths Among HIV-Positive Patients? ({year})",
+            subtitle="Each point represents a country; lower-right quadrant indicates successful ART intervention",
+            subtitleColor="gray",
+            subtitleFontSize=12
+        ),
+        height=500
+    )
+
+    st.altair_chart(chart, use_container_width=True)
