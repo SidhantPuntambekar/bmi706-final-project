@@ -412,7 +412,6 @@ elif sidebar == "Associations Between Tuberculosis and HIV Prevalence":
 
     # Filter out potential infinite or NaN values and ensure region is present
     df = df.dropna(subset=["ART Coverage", "region"])
-
     # Filter to start from 2003 (earlier years have insufficient data)
     df = df[df["Year"] >= 2003]
 
@@ -454,7 +453,7 @@ elif sidebar == "Associations Between Tuberculosis and HIV Prevalence":
             title=alt.TitleParams(
                 text=f"Does Antiretroviral Therapy Reduce TB Deaths Among HIV-Positive Patients? ({year})",
                 subtitle="Each point represents a country; lower-right quadrant indicates successful ART intervention",
-                subtitleColor="gray",
+                subtitleColor="black",
                 subtitleFontSize=12
             ),
             height=500
