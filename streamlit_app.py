@@ -67,8 +67,8 @@ if sidebar == "Global Incidence of Tuberculosis":
 
     source = alt.topo_feature(data.world_110m.url, "countries")
 
-    width = 600
-    height = 300
+    width = 700
+    height = 400
     project = "equirectangular"
 
     background = (
@@ -185,8 +185,8 @@ elif sidebar == "Age Distributions of Tuberculosis Related Deaths":
         color=alt.Color("Age Group:N", title="Age Group", sort = age_order),
         tooltip=["Year", "Age Group", "Deaths"]
     ).properties(
-        width=600,
-        height=400,
+        width = 700,
+        height = 400,
         title=f"Global Tuberculosis Deaths by Age Group ({year_range[0]}-{year_range[1]})"
     )
 
@@ -308,16 +308,16 @@ elif sidebar == "Drug-Resistant TB Treatment Success Rate":
 
         df_xdr_mdr = df_xdr_mdr.rename(columns={
             "Entity": "Country",
-            "Indicator:Treatment success rate: new TB cases": "New TB Cases Treatment Success Rate",
-            "Indicator:Treatment success rate for patients treated for MDR-TB (%)": "MDR-TB Cases Treatment Success Rate", 
-            "Indicator:Treatment success rate: XDR-TB cases": "XDR-TB Cases Treatment Success Rate", 
+            "Indicator:Treatment success rate: new TB cases": "New TB Cases",
+            "Indicator:Treatment success rate for patients treated for MDR-TB (%)": "MDR-TB Cases", 
+            "Indicator:Treatment success rate: XDR-TB cases": "XDR-TB Cases", 
         })
 
         return df_xdr_mdr
     
     part4_df_xdr_mdr = part4_load_data()
 
-    default_countries = ["South Africa", "India", "Spain", "Hungary", "France"] # These countries have high levels of 
+    default_countries = ["Democratic Republic of Congo", "South Africa", "India", "Guinea-Bissau", "Botswana"] # These countries have high levels of 
 
     countries = st.multiselect(
         "Countries",
@@ -331,7 +331,7 @@ elif sidebar == "Drug-Resistant TB Treatment Success Rate":
 
     country_filtered_df_xdr_mdr_melt = country_filtered_df_xdr_mdr.melt(
         id_vars=["Country", "Year"],
-        value_vars = ["New TB Cases Treatment Success Rate", "MDR-TB Cases Treatment Success Rate", "XDR-TB Cases Treatment Success Rate"],
+        value_vars = ["New TB Cases", "MDR-TB Cases", "XDR-TB Cases"],
         var_name = "Tuberculosis Type",
         value_name = "Treatment Success Rate"
     )
@@ -342,7 +342,7 @@ elif sidebar == "Drug-Resistant TB Treatment Success Rate":
         single_country_df = country_filtered_df_xdr_mdr_melt[country_filtered_df_xdr_mdr_melt["Country"] == country]
 
         chart = alt.Chart(single_country_df).mark_line(
-            point=True
+            point = True
         ).encode(
             x = alt.X("Year:O", title="Year"),
             y = alt.Y("Treatment Success Rate:Q", title = "Treatment Success Rate (%)", scale = alt.Scale(domain = [0, 100])),
@@ -350,8 +350,15 @@ elif sidebar == "Drug-Resistant TB Treatment Success Rate":
             tooltip = ["Country", "Year", "Tuberculosis Type", "Treatment Success Rate"]
         ).properties(
             width = 700,
-            height = 300,
-            title = country
+            height = 400,
+            title = alt.TitleParams(
+                text = f"{country} Tuberculosis Case Treatment Success Rate",
+                fontSize = 16,
+                subtitle = "",
+                subtitleColor = "white",
+                subtitleFontSize = 12,
+                subtitleFontWeight = "normal"
+            )
         )
 
         chart_list.append(chart)
