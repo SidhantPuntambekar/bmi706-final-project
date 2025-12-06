@@ -50,7 +50,7 @@ cd bmi706-final-project
 pip install -r requirements.txt
 
 # Run the Streamlit application locally
-streamlit run app.py
+streamlit run streamlit_app.py
 ```
 
 References
