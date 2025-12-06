@@ -37,7 +37,21 @@ Our main goal for the tuberculosis visualization tool is to describe the prevale
 4. Geographical distribution and prevalence of treatment success rate for antibiotic-resistant tuberculosis (MDR, XDR) cases. 
 5. Relationships between tuberculosis burden and major risk factors (from orthogonal datasets) such as HIV prevalence. 
 
-# References
+# Installation and Running the Application
+
+To set up and run the application locally:
+
+```bash
+# Clone the repository
+git clone https://github.com/SidhantPuntambekar/bmi706-final-project.git
+cd bmi706-final-project
+
+# Install required dependencies
+pip install -r requirements.txt
+
+# Run the Streamlit application locally
+streamlit run app.py
+```
 
 References
 
