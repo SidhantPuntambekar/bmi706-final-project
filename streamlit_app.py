@@ -118,7 +118,7 @@ if sidebar == "Global Incidence of Tuberculosis":
         tooltip = ["Country:N", "Case Detection Rate:Q"]
     ).transform_filter(selector).properties(
         title = alt.TitleParams(
-            text = f"Estimated tuberculosis case detection rate, {year}",
+            text = f"Estimated tuberculosis case detection rate (%), {year}",
             fontSize = 16,
             subtitle = "Represents tuberculosis cases that were detected and treated in national tuberculosis control programs",
             subtitleColor = "white",
