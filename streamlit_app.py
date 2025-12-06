@@ -13,6 +13,20 @@ sidebar = st.sidebar.selectbox("Select Dashboard", ["Global Incidence of Tubercu
                                                     "Drug-Resistant TB Treatment Success Rate",
                                                     "Associations Between Tuberculosis and HIV Prevalence"])
 
+
+# Add spacing
+st.sidebar.markdown("---")
+
+# Add team + author info
+st.sidebar.markdown("### Team: The Last Altairbenders")
+st.sidebar.markdown("""
+**Authors:**  
+- Claire Qu
+- Sidhant Puntambekar
+- Beatrice Chen
+- Christine Song
+""")
+
 if sidebar == "Global Incidence of Tuberculosis":
     def part1_load_data():
         df_incidence = pd.read_csv("data/1- incidence-of-tuberculosis-sdgs.csv")
