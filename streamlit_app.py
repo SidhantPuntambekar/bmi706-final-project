@@ -11,7 +11,7 @@ sidebar = st.sidebar.selectbox("Select Dashboard", ["Global Incidence of Tubercu
                                                     "Age Distributions of Tuberculosis Related Deaths",
                                                     "Tuberculosis Diagnosis Gaps", 
                                                     "Drug-Resistant TB Treatment Success Rate",
-                                                    "Associations Between Tuberculosis Burden and Key Risk Factors (HIV Prevalence)"])
+                                                    "Associations Between Tuberculosis and HIV Prevalence"])
 
 if sidebar == "Global Incidence of Tuberculosis":
     def part1_load_data():
@@ -367,7 +367,7 @@ elif sidebar == "Drug-Resistant TB Treatment Success Rate":
     final_chart = alt.vconcat(*chart_list)
     st.altair_chart(final_chart, use_container_width=True)
 
-elif sidebar == "Associations Between Tuberculosis Burden and Key Risk Factors (HIV Prevalence)":
+elif sidebar == "Associations Between Tuberculosis and HIV Prevalence":
     def part5_load_data():
         df_deaths = pd.read_csv("data/5- tb-related-deaths-hiv.csv")
         df_art = pd.read_csv("data/7- tb-patients-living-with-hiv-receiving-art.csv")
